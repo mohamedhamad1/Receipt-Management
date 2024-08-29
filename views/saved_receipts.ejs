@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عرض الإيصالات</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 20px;
+            direction: rtl; /* تعيين اتجاه النصوص من اليمين لليسار */
+            background-color: #f5f5f5; /* خلفية بيضاء فاتحة */
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .receipt-card {
+            background-color: #ffffff; /* خلفية الكارت */
+            border: 1px solid #dee2e6; /* لون الحدود */
+            border-radius: .375rem;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* تأثير ظل خفيف */
+        }
+        .receipt-card-header {
+            background-color: #007bff; /* لون خلفية العنوان */
+            color: #ffffff; /* لون النص */
+            padding: 10px;
+            border-radius: .375rem .375rem 0 0;
+        }
+        .receipt-card-body {
+            padding: 20px;
+        }
+        .table th, .table td {
+            text-align: right; /* تعيين محاذاة النصوص لليمين */
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .final-total {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        hr {
+            border-top: 1px solid #dee2e6; /* خط فاصل بين الكروت */
+            margin: 20px 0;
+        }
+        .summary {
+            margin-top: 30px;
+            background-color: #ffffff;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-radius: .375rem;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">عرض الفواتير</h1>
+        <div class="row">
+            <% if (receipts.length === 0) { %>
+                <div class="col-md-12">
+                    <h3 class="text-center">لا توجد فواتير حتى الآن</h3>
+                </div>
+            <% } else { %>
+                <% receipts.forEach(receipt => { %>
+                    <div class="col-md-12">
+                        <div class="receipt-card">
+                            <div class="receipt-card-header text-right">
+                                تفاصيل الفاتورة
+                            </div>
+                            <div class="receipt-card-body">
+                                <h6 class="text-right text-muted">التاريخ: <%= new Date(receipt.createdAt).toLocaleDateString('ar-EG') %></h6>
+                                <br>
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>اسم المنتج</th>
+                                            <th>الكمية</th>
+                                            <th>السعر لكل وحدة</th>
+                                            <th>المجموع</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% receipt.products.forEach(product => { %>
+                                            <tr>
+                                                <td><%= product.productName %></td>
+                                                <td><%= product.quantity %></td>
+                                                <td><%= product.unitPrice.toFixed(2) %></td>
+                                                <td><%= product.total.toFixed(2) %></td>
+                                            </tr>
+                                        <% }) %>
+                                    </tbody>
+                                </table>
+                                <div class="text-right final-total">
+                                    السعر النهائي: <%= receipt.receiptPrice.toFixed(2) %>
+                                </div>
+                            </div>
+                        </div>
+                        <hr> <!-- خط فاصل بين الكروت -->
+                    </div>
+                <% }) %>
+            <% } %>
+        </div>
+        <!-- قسم تلخيص الفواتير -->
+        <div class="summary">
+            <h3 class="text-right">تلخيص الفواتير</h3>
+            <div class="text-right mt-4">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>اسم المنتج</th>
+                            <th>الكمية</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% summaries.forEach(summary => { %>
+                            <tr>
+                                <td><%= summary.productName %></td>
+                                <td><%= summary.productQuantity %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+                <div class="text-center final-total">
+                    اجمالي المبيعات: <%= totalyPrice %>
+                </div>
+                <div class="text-center final-total">
+                    رأس المال: <%= capital %>
+                </div>
+                <div class="text-center final-total">
+                    الأرباح: <%= bounty %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+</body>
+</html>

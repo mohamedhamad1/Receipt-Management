@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الفواتير</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 20px;
+            direction: rtl; /* تعيين اتجاه النصوص من اليمين لليسار */
+        }
+        .container {
+            max-width: 800px;
+        }
+        .receipt-form {
+            border: 1px solid #dee2e6;
+            border-radius: .375rem;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .final-total {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">إدارة الفواتير</h1>
+        <div class="receipt-form">
+            <form id="invoice-form">
+                <div class="form-group">
+                    <label for="productName">اسم المنتج</label>
+                    <select class="form-control" id="productName" required>
+                        <option value="" disabled selected>اختر منتجًا</option>
+                        <% products.forEach(product => { %>
+                            <option value="<%= product.productName %>"><%= product.productName %></option>
+                        <% }) %>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="quantity">الكمية</label>
+                    <input type="number" class="form-control" id="quantity" placeholder="أدخل الكمية" required>
+                </div>
+                <div class="form-group">
+                    <label for="price">السعر لكل وحدة</label>
+                    <input type="number" class="form-control" id="price" step="0.01" placeholder="أدخل السعر لكل وحدة" required>
+                </div>
+                <div class="text-right">
+                    <button type="submit" class="btn btn-primary">أضف إلى الفاتورة</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="mt-4">
+            <h3 class="text-right">تفاصيل الفاتورة</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>اسم المنتج</th>
+                        <th>الكمية</th>
+                        <th>السعر لكل وحدة</th>
+                        <th>الإجمالي</th>
+                    </tr>
+                </thead>
+                <tbody id="receiptTableBody">
+                    <!-- سيتم إضافة الصفوف هنا ديناميكيًا -->
+                </tbody>
+            </table>
+            <div class="text-right">
+                <h4 class="final-total">المجموع الكلي: $<span id="totalAmount">0.00</span></h4>
+            </div>
+            <br>
+            <div class="text-right">
+                <button onclick="saveReceipt()" class="btn btn-success" id="saveReceiptButton">حفظ الفاتورة</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.1/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        let products = [];
+        let receiptPrice = 0;
+
+        document.getElementById('invoice-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // الحصول على قيم النموذج
+            const productName = document.getElementById('productName').value;
+            const quantity = parseInt(document.getElementById('quantity').value, 10);
+            const price = parseFloat(document.getElementById('price').value);
+            
+            if (productName && quantity && price) {
+                const total = quantity * price;
+                
+                // إضافة صف إلى الجدول
+                const tableBody = document.getElementById('receiptTableBody');
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${productName}</td>
+                    <td>${quantity}</td>
+                    <td>$${price.toFixed(2)}</td>
+                    <td>$${total.toFixed(2)}</td>
+                `;
+                tableBody.appendChild(row);
+                
+                // تحديث المجموع الكلي
+                receiptPrice += total;
+                document.getElementById('totalAmount').textContent = receiptPrice.toFixed(2);
+                
+                // إعادة تعيين النموذج
+                document.getElementById('invoice-form').reset();
+                document.getElementById('productName').value = ''; // إعادة تعيين اختيار القائمة المنسدلة
+                toggleSaveButton()
+            }
+        });
+
+        function toggleSaveButton() {
+            const saveButton = document.getElementById('saveReceiptButton');
+            if (document.querySelectorAll('#receiptTableBody tr').length > 0) {
+                saveButton.style.display = 'block'; // عرض الزر إذا كان هناك منتجات
+            } else {
+                saveButton.style.display = 'none'; // إخفاء الزر إذا لم يكن هناك منتجات
+            }
+        }
+
+        function saveReceipt() {
+            const invoiceData = {
+                products: Array.from(document.querySelectorAll('#receiptTableBody tr')).map(row => {
+                    const cells = row.querySelectorAll('td');
+                    return {
+                        productName: cells[0].textContent,
+                        quantity: parseInt(cells[1].textContent, 10),
+                        unitPrice: parseFloat(cells[2].textContent.replace('$', '')),
+                        total: parseFloat(cells[3].textContent.replace('$', ''))
+                    };
+                }),
+                receiptPrice
+            };
+
+            fetch('/create_receipt', {  // استبدل هذا بعنوان API الخاص بك
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(invoiceData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('تم حفظ الفاتورة بنجاح!');
+                products = [];
+                receiptPrice = 0;
+                document.getElementById('receiptTableBody').innerHTML = '';
+                document.getElementById('totalAmount').textContent = '0.00';
+                toggleSaveButton()
+            })
+            .catch(error => {
+                console.error('خطأ:', error);
+                alert('فشل في حفظ الفاتورة.');
+            });
+        }
+        window.onload = function() {
+            toggleSaveButton();
+        }
+    </script>
+</body>
+</html>
